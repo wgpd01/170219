@@ -1,0 +1,2 @@
+QR Code
+http://www.jquery4u.com/plugins/9-jquery-qr-plugins/

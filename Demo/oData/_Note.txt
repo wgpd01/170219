@@ -1,0 +1,84 @@
+﻿Lab: oData 之查詢與新增資料
+
+
+
+1.	連接到 (local)\SQLExpress，新增查詢視窗，
+	執行下列指令以建立資料庫:
+
+create database LabDB
+go
+
+use LabDB
+go
+
+CREATE TABLE LabTable
+(
+  id int NOT NULL PRIMARY KEY,
+  data varchar(20)
+)
+GO
+
+insert into LabTable values (1, 'data a')
+insert into LabTable values (2, 'data b')
+insert into LabTable values (3, 'data c')
+Go
+
+
+
+2.	繼續執行下列指令以設定權限: 
+
+-- SQLExpress預設已有 Login ID: BUILTIN\Users，
+-- 以下的指令將之設為 LabDB的使用者並設定讀寫權限
+USE LabDB
+CREATE USER [Users] FOR LOGIN [BUILTIN\Users]
+ALTER ROLE [db_datareader] ADD MEMBER [Users]
+ALTER ROLE [db_datawriter] ADD MEMBER [Users]
+GO
+
+
+
+
+3.	Visual Studio
+	檔案 | 開啟專案，選擇 oDataLab.sln
+(Optional)時間許可的話，請手動建立 oData 網路服務而非單純開啟專案。
+
+
+
+4.	開啟 Web.config，視需要修改連線字串的內容，例如:
+	data source=(local)
+	換成
+	data source=(local)\SQLExpress
+
+
+
+5.	試用下列 oData 語法並且以 Fiddler 觀察 HTTP 活動
+	<Note>若是另外新建的 oData 網路服務，49613 請改改成專案動態配置的埠號。
+
+http://localhost:49613/odata/LabTables
+http://localhost:49613/odata/LabTables(1)
+
+
+
+6. 	利用 Fiddler 送出 POST HTTP 指令告知 oData 新增一筆資料
+	<Note>同上，請留意是否需要修改埠號。
+
+6.1	切換到 Fiddler 的 Composer 頁籤
+
+6.2	下拉式選項選 POST
+
+6.3	網址: http://localhost:49613/odata/LabTables
+
+6.4	標頭區: Content-Type: application/json
+
+6.5	Request Body: {"id": 5, "data": "data e"}
+
+6.5	點按「Execute」
+
+6.6	利用 http://localhost:49613/odata/LabTables 觀察資料是否已成功新增到資料庫。
+
+
+
+
+7.	說明 Client 資料夾的和範例
+	(以 jQuery 寫作的 Client 端程式, 功能為列出、新增資料。)
+

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>jQuery Lab - ShoppingList</title>
+<script src="jquery-1.9.1.min.js"></script>
+<link rel="stylesheet"
+	href="jquery.mobile-1.3.2/jquery.mobile-1.3.2.min.css" />
+<script src="jquery.mobile-1.3.2/jquery.mobile-1.3.2.min.js"></script>
+<script src="jquery.tmpl.min.js"></script>
+
+<style>
+div.ui-slider-switch {
+	position: absolute;
+	right: 1em;
+	top: 0.5em;
+}
+</style>
+
+</head>
+<body>
+
+	<div data-role="page" id="mainPage">
+		<div data-role="header">
+			<h1>採買清單</h1>
+			<a href="#aboutPage" data-role="button" 
+				data-icon="info" data-iconpos="notext" class="ui-btn-right"></a>
+		</div>
+		<div data-role="content">
+			<div class="ui-grid-a" style="margin-bottom: 1em;">
+				<div class="ui-block-a" style="width: 90%">
+					<input type="text" id="txtName" placeholder="請輸入名稱，然後點按「＋」按鈕">
+				</div>
+				<div class="ui-block-b" style="width: 10%">
+					<input type="button" id="btnAdd" data-icon="plus" data-iconpos="notext">
+				</div>
+			</div>
+
+
+			<ul id="shoppingList" data-role="listview" data-inset="true">
+
+
+<!-- 
+				<li data-icon="false"><a href="#">
+						<h3>...</h3>
+						<div>
+							<select data-role="slider">
+								<option value="0">待買</option>
+								<option value="1">已購</option>
+							</select>
+						</div>
+				</a></li>
+ -->
+ 
+ 
+			</ul>
+
+
+		</div>
+	</div>
+	<!-- main page -->
+
+
+	<div data-role="dailog" id="detailPage">
+		<div data-role="header">
+			<h1>採買清單（修改）</h1>
+		</div>
+		<div data-role="content">
+			<div data-role="fieldcontain">
+				<label for="#txtNameOnDetail">名稱：</label>
+				<input type="text" id="txtNameOnDetail">
+			</div>
+			<div class="ui-grid-a">
+				<div class="ui-block-a">
+					<input type="button" id="btnOKOnDetail" value="確定" data-icon="check">
+				</div>
+				<div class="ui-block-b">
+					<a href="#mainPage" data-role="button">不修改</a>
+				</div>
+			</div>
+			<input type="hidden" id="idIndexOnDetail">
+		</div>
+	</div>
+	<!-- Detail page -->
+
+
+
+	<div data-role="dailog" id="aboutPage">
+		<div data-role="header">
+			<h1>採買清單（關於）</h1>
+		</div>
+		<div data-role="content">
+			<h1>操作小提示:</h1>
+			<ul data-role="listview">
+				<li><h2>新增</h2><p>輸入商品名稱，點按「+」按鈕。</li>
+				<li><h2>修改</h2><p>長按商品名稱。</li>
+				<li><h2>刪除</h2><p>向左或向右滑過商品名稱。</li>
+			</ul>
+			<br>
+			<p>作者：錢達智(wolfgang.chien@gmail.com)</p>
+			<a href="#mainPage" data-role="button" data-icon="home">返回主畫面</a>
+		</div>
+	</div>
+	<!-- Detail page -->
+
+
+
+	<script id="liTemplate" type="text/x-jquery-tmpl">
+				<li data-icon="false"><a href="#">
+						<h3>...</h3>
+						<div>
+							<select data-role="slider">
+								<option value="0">待買</option>
+								<option value="1">已購</option>
+							</select>
+						</div>
+				</a></li>
+	</script>
+
+
+	<script>
+		var objList = [];
+
+		$(document).ready(function() {
+			loadAndAddToList();
+			
+			$("#btnAdd").click(btnAdd_click);
+			$("#btnOKOnDetail").click(btnOKOnDetail_click);
+			$("#txtName").focus();
+		});
+		
+
+		function btnAdd_click() {
+			var sName = $("#txtName").val().trim();
+			for (var i = 0; i < objList.length; i++) {
+				if (objList[i].name == sName) {
+					$("#txtName").focus();
+					return;
+				}
+			}
+			
+			var objItem = {};
+			objItem.name = sName;
+			objItem.select = 0;
+			objList.push(objItem);
+			saveData();
+			addToList(objItem);
+			$("#txtName").val("");
+			$("#txtName").focus();
+		}
+
+		function addToList(objItem) {
+			$("#liTemplate").tmpl().appendTo("#shoppingList").trigger('create');
+			$("#shoppingList").listview("refresh");
+			$("#shoppingList h3").eq(objList.length - 1).text(objItem.name);
+			$("#shoppingList select").eq(objList.length - 1)
+					.val(objItem.select).slider("refresh");
+			$("#shoppingList select").eq(objList.length - 1).change(
+					userSwitchBuyOption);
+			$("#shoppingList li").eq(objList.length - 1).on("swipe",
+					userSwipeListItem);
+			$("#shoppingList li").eq(objList.length - 1).on("taphold",
+					userTapholdListItem);
+		}
+
+		
+		function saveData() {
+			localStorage.setItem("ShoppingList", JSON.stringify(objList));
+		}
+
+		
+		function loadAndAddToList() {
+			if (localStorage.length <= 0)
+				return;
+			$("#shoppingList").html("");
+			objStoredList = eval("(" + localStorage["ShoppingList"] + ")");
+			for (var i = 0; i < objStoredList.length; i++) {
+				var objItem = objStoredList[i];
+				objList.push(objItem);
+				addToList(objItem);
+			}
+		}
+
+		
+		function userSwitchBuyOption(e) {
+			var i = $(this).parents('li').eq(0).index();
+			objList[i].select = $(this).val();
+			saveData();
+		}
+
+		
+		function userSwipeListItem(e) {
+			var i = $(this).index();
+			objList.splice(i, 1);
+			saveData();
+			objList = [];
+			loadAndAddToList();
+		}
+
+		
+		function userTapholdListItem(e) {
+			var i = $(this).index();
+			$("#txtNameOnDetail").val(objList[i].name);
+			$("#idIndexOnDetail").val(i);
+			$.mobile.changePage("#detailPage");
+		}
+		
+		
+		function btnOKOnDetail_click(e) {
+			var sName = $("#txtNameOnDetail").val();
+			var i = $("#idIndexOnDetail").val();
+			objList[i].name = sName;
+			saveData();
+			$("#shoppingList h3").eq(i).text(sName);
+			$.mobile.back();
+		}
+		
+	</script>
+	
+</body>
+</html>
